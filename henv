@@ -1,0 +1,143 @@
+#!/bin/bash
+#
+# henv - Home Environment Settings
+# Required packages: git, curl
+#
+
+msg_err="ERROR (!) Required: id != 0"
+test "$(id -u)" == 0 && echo -e "\e[91m${msg_err}\e[0m" && exit 1
+
+usage()
+{
+cat << EOF
+Usage: $(basename $0) [OPTION]...
+Home Environment Settings. Manjaro Linux, Pacman
+
+  [option]
+  mc             midnight commander settings
+  vim            vimrc + plugins
+  home           removing unneeded directories from home
+  bashrc         bashrc addition useful lines (export / alias)
+  hotkeys        configuration favorite hotkeys (xfce)
+  packages       installation favorite packages (pacman)
+
+EOF
+}
+
+mc_conf()
+{
+  if test "$(pacman -Q | grep ^mc)"; then
+    for dir in $HOME/.config/mc /root/.config/mc; do
+      cp configs/mc/*ini $dir
+    done
+    [ $? == 0 ] && echo "Midnight commander updated"
+  else
+    echo -e "\e[91mMidnight commander not exist\e[0m"
+  fi
+}
+
+vim_conf()
+{
+  vim_plug_link=https://github.com/junegunn/vim-plug
+  vim_plug_path=$HOME/.vim/autoload/plug.vim
+  ready_vimrc=configs/etc/vimrc.file
+
+  # plug.vim
+  if test "$(pacman -Q | grep ^curl)"; then
+    if test -e $vim_plug_path; then
+      echo "$vim_plug_path ready exist"
+    else
+      echo && curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+      [ $? == 0 ] && echo "$vim_plug_path successfully created"
+    fi
+
+    # .vimrc + plugins
+    if test -e $ready_vimrc; then
+      cat $ready_vimrc > $HOME/.vimrc
+      sleep 1 && vim +PlugInstall
+      [ $? == 0 ] && echo "$HOME/.vimrc updated"
+    else
+      echo -e "\e[91m$ready_vimrc not exist\e[0m"
+    fi
+  else
+    echo -e "\e[91mPlease install curl before plugins installation\e[0m"
+  fi
+}
+
+home_conf()
+{
+  trash_dirs=(Видео Музыка Общедоступные Шаблоны Документы)
+  for dir in ${trash_dirs[*]}; do
+    if test -e $HOME/$dir; then
+      rm -ri $HOME/$dir && echo "$dir removed"
+    fi
+  done
+}
+
+bashrc_extra_here_doc()
+{
+cat << EOF >> ~/.bashrc
+
+# Common
+export HISTCONTROL=ignoredups
+export EDITOR='/usr/bin/vim'
+export PATH=$HOME/main/bin:"\$${!PATH@}"
+export LANG=en_US.utf8
+alias _date='date +"%d/%m/%Y - %H:%M:%S"'
+
+EOF
+}
+
+bashrc_conf()
+{
+  if test "$(cat $HOME/.bashrc | grep "# Common")"; then
+    echo "$HOME/.bashrc update done"
+  else
+    bashrc_extra_here_doc
+    [ $? == 0 ] && echo "$HOME/.bashrc successfully updated"
+  fi
+}
+
+hotkeys_conf()
+{
+  keyconf=configs/etc/xfce4-keyboard-shortcuts.xml
+  homeconf=$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+
+  if test -e $keyconf; then
+    cat $keyconf > $homeconf
+    [ $? == 0 ] && echo "$homeconf successfully updated"
+  else
+    echo -e "\e[91m$keyconf not exist\e[0m"
+  fi
+}
+
+packages_conf()
+{
+  # init 'packages' list
+  packages=(dnsutils traceroute whois tcpdump nmap curl \
+  netcat net-tools gcc make gdb bat vim nano xsel mc strace pv moreutils)
+
+  pacman -Syy
+  # loop installation
+  for pack in ${packages[*]}; do pacman -S $pack --noconfirm; done
+}
+
+case $1 in
+  "mc") mc_conf ;;
+  "vim") vim_conf ;;
+  "home") home_conf ;;
+  "bashrc") bashrc_conf ;;
+  "hotkeys") hotkeys_conf ;;
+  "packages") packages_conf ;;
+  "-h" | "--help") usage ;;
+
+  *)
+    read -p "Ready?(y/n) " y_or_n
+    if test $y_or_n == "y"; then
+      packages_conf; home_conf
+      mc_conf; vim_conf; bashrc_conf
+      hotkeys_conf
+    fi
+  ;;
+esac

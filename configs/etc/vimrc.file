@@ -1,0 +1,23 @@
+call plug#begin('~/.vim/plugged')
+
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'ntpeters/vim-better-whitespace'
+Plug 'morhetz/gruvbox'
+
+call plug#end()
+
+syntax on
+"colorscheme gruvbox
+"set background=dark
+filetype indent off
+set number
+set expandtab
+set tabstop=2
+set hlsearch
+set incsearch
+set noswapfile
+" correct insertion from clipboard
+set paste
+" shortcuts
+map <C-n> :NERDTreeToggle<CR>
+nnoremap <F3> :set hlsearch!<CR>
