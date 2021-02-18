@@ -1,7 +1,6 @@
 #!/bin/bash
 #
 # henv - Home Environment Settings
-# Required packages: git, curl
 #
 
 msg_err="ERROR (!) Required: id != 0"
@@ -24,16 +23,25 @@ Home Environment Settings. Manjaro Linux, Pacman
 EOF
 }
 
+check_status()
+{
+  [ $? != 0 ] && echo -e "\e[91mSomething went wrong\e[0m" && exit 1
+}
+
 mc_conf()
 {
   if test "$(pacman -Q | grep ^mc)"; then
-    for dir in $HOME/.config/mc /root/.config/mc; do
-      cp configs/mc/*ini $dir
-    done
-    [ $? == 0 ] && echo "Midnight commander updated"
+    # check dirs and create if not exist
+    test ! -e $HOME/.config/mc && mkdir $HOME/.config/mc
+    sudo test ! -e /root/.config/mc && sudo mkdir /root/.config/mc
+    # copy ready configs
+    cp configs/mc/*ini $HOME/.config/mc
+    sudo cp configs/mc/*ini /root/.config/mc
+    [ $? == 0 ] && echo -e "\e[93mMidnight commander updated\e[0m"
   else
     echo -e "\e[91mMidnight commander not exist\e[0m"
   fi
+  check_status
 }
 
 vim_conf()
@@ -45,24 +53,25 @@ vim_conf()
   # plug.vim
   if test "$(pacman -Q | grep ^curl)"; then
     if test -e $vim_plug_path; then
-      echo "$vim_plug_path ready exist"
+      echo -e "\e[93m$vim_plug_path ready exist\e[0m"
     else
       echo && curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs \
       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-      [ $? == 0 ] && echo "$vim_plug_path successfully created"
+      [ $? == 0 ] && echo -e "\e[93m$vim_plug_path successfully created\e[0m"
     fi
 
     # .vimrc + plugins
     if test -e $ready_vimrc; then
       cat $ready_vimrc > $HOME/.vimrc
       sleep 1 && vim +PlugInstall
-      [ $? == 0 ] && echo "$HOME/.vimrc updated"
+      [ $? == 0 ] && echo -e "\e[93m$HOME/.vimrc updated\e[0m"
     else
       echo -e "\e[91m$ready_vimrc not exist\e[0m"
     fi
   else
     echo -e "\e[91mPlease install curl before plugins installation\e[0m"
   fi
+  check_status
 }
 
 home_conf()
@@ -70,9 +79,10 @@ home_conf()
   trash_dirs=(Видео Музыка Общедоступные Шаблоны Документы)
   for dir in ${trash_dirs[*]}; do
     if test -e $HOME/$dir; then
-      rm -ri $HOME/$dir && echo "$dir removed"
+      rm -ri $HOME/$dir && echo -e "\e[93m$dir removed\e[0m"
     fi
   done
+  check_status
 }
 
 bashrc_extra_here_doc()
@@ -92,11 +102,12 @@ EOF
 bashrc_conf()
 {
   if test "$(cat $HOME/.bashrc | grep "# Common")"; then
-    echo "$HOME/.bashrc update done"
+    echo -e "\e[93m$HOME/.bashrc update done\e[0m"
   else
     bashrc_extra_here_doc
-    [ $? == 0 ] && echo "$HOME/.bashrc successfully updated"
+    [ $? == 0 ] && echo -e "\e[93m$HOME/.bashrc successfully updated\e[0m"
   fi
+  check_status
 }
 
 hotkeys_conf()
@@ -106,10 +117,11 @@ hotkeys_conf()
 
   if test -e $keyconf; then
     cat $keyconf > $homeconf
-    [ $? == 0 ] && echo "$homeconf successfully updated"
+    [ $? == 0 ] && echo -e "\e[93m$homeconf successfully updated\e[0m"
   else
     echo -e "\e[91m$keyconf not exist\e[0m"
   fi
+  check_status
 }
 
 packages_conf()
@@ -118,9 +130,10 @@ packages_conf()
   packages=(dnsutils traceroute whois tcpdump nmap curl \
   netcat net-tools gcc make gdb bat vim nano xsel mc strace pv moreutils)
 
-  pacman -Syy
+  sudo pacman -Syy
   # loop installation
-  for pack in ${packages[*]}; do pacman -S $pack --noconfirm; done
+  for pack in ${packages[*]}; do sudo pacman -S $pack --noconfirm; done
+  check_status
 }
 
 case $1 in
@@ -133,10 +146,13 @@ case $1 in
   "-h" | "--help") usage ;;
 
   *)
-    read -p "Ready?(y/n) " y_or_n
+    read -p "Ready to configurations?(y/n) " y_or_n
     if test $y_or_n == "y"; then
-      packages_conf; home_conf
-      mc_conf; vim_conf; bashrc_conf
+      packages_conf
+      home_conf
+      mc_conf
+      vim_conf
+      bashrc_conf
       hotkeys_conf
     fi
   ;;
