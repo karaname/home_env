@@ -127,7 +127,7 @@ hotkeys_conf()
 packages_conf()
 {
   # init 'packages' list
-  packages=(dnsutils traceroute whois tcpdump nmap curl \
+  packages=(dnsutils traceroute whois tcpdump nmap curl ripgrep \
   netcat net-tools gcc make gdb bat vim nano xsel mc strace pv moreutils)
 
   sudo pacman -Syy

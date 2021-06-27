@@ -2,17 +2,17 @@ call plug#begin('~/.vim/plugged')
 
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'ntpeters/vim-better-whitespace'
-Plug 'morhetz/gruvbox'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 
 call plug#end()
 
 syntax on
-"colorscheme gruvbox
-"set background=dark
 filetype indent off
 set number
 set expandtab
 set tabstop=2
+set shiftwidth=2
 set hlsearch
 set incsearch
 set noswapfile
@@ -20,4 +20,7 @@ set noswapfile
 set paste
 " shortcuts
 map <C-n> :NERDTreeToggle<CR>
-nnoremap <F3> :set hlsearch!<CR>
+map <F3> :set hlsearch!<CR>
+map <C-f> :Files<CR>
+" Rg required 'ripgrep' package
+map <C-q> :Rg<CR>
