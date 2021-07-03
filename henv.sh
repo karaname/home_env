@@ -1,10 +1,12 @@
 #!/bin/bash
 #
-# henv - Home Environment Settings
+# Home Environment Settings
 #
 
-msg_err="ERROR (!) Required: id != 0"
-test "$(id -u)" == 0 && echo -e "\e[91m${msg_err}\e[0m" && exit 1
+if test "$(id -u)" == 0; then
+  echo -e "\e[91mERROR (!) Required: id != 0\e[0m"
+  exit 1
+fi
 
 usage()
 {
@@ -19,13 +21,17 @@ Home Environment Settings. Manjaro Linux, Pacman
   bashrc         bashrc addition useful lines (export / alias)
   hotkeys        configuration favorite hotkeys (xfce)
   packages       installation favorite packages (pacman)
+  help           print this help and exit
 
 EOF
 }
 
 check_status()
 {
-  [ $? != 0 ] && echo -e "\e[91mSomething went wrong\e[0m" && exit 1
+  if [ $? != 0 ]; then
+    echo -e "\e[91mSomething went wrong\e[0m"
+    exit 1
+  fi
 }
 
 mc_conf()
@@ -39,7 +45,7 @@ mc_conf()
     sudo cp configs/mc/*ini /root/.config/mc
     [ $? == 0 ] && echo -e "\e[93mMidnight commander updated\e[0m"
   else
-    echo -e "\e[91mMidnight commander not exist\e[0m"
+    echo -e "\e[91mMidnight Commander not exist\e[0m"
   fi
   check_status
 }
@@ -143,11 +149,11 @@ case $1 in
   "bashrc") bashrc_conf ;;
   "hotkeys") hotkeys_conf ;;
   "packages") packages_conf ;;
-  "-h" | "--help") usage ;;
+  "help") usage ;;
 
   *)
-    read -p "Ready to configurations?(y/n) " y_or_n
-    if test $y_or_n == "y"; then
+    read -p "Ready to configurations?(y/n) " answer
+    if [ "$answer" == "y" ] || [ "$answer" == "Y" ]; then
       packages_conf
       home_conf
       mc_conf
@@ -157,3 +163,5 @@ case $1 in
     fi
   ;;
 esac
+
+
